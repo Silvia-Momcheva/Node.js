@@ -1,0 +1,225 @@
+doctype html
+html
+  head
+    title MiniBlog
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css")
+    script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css")
+    
+    style.
+      body {
+        background-color: #f8f9fa;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .blog-post {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 1rem;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.3s ease;
+      }
+
+      .blog-post:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      .blog-img {
+        width: 200px;
+        height: auto;
+        max-height: 200px;
+        object-fit: contain;
+        border-radius: 0.5rem;
+        border: 1px solid #eee;
+      }
+
+      .blog-content {
+        flex: 1;
+      }
+
+      .btn-outline-info:hover,
+      .btn-outline-danger:hover,
+      .btn-success:hover {
+        transform: scale(1.05);
+        opacity: 0.95;
+      }
+
+      .btn {
+        transition: all 0.2s ease-in-out;
+      }
+
+      .navbar-brand {
+        font-weight: bold;
+        font-size: 1.4rem;
+        color: #0d6efd !important;
+        transition: color 0.2s ease;
+      }
+
+      .navbar-brand:hover {
+        color: #0a58ca !important;
+      }
+
+      .alert-info {
+        background-color: #e9f4ff;
+        color: #0c63e4;
+        border-color: #b6dcfe;
+      }
+
+      .card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      }
+
+      textarea.form-control {
+        resize: none;
+        transition: box-shadow 0.2s;
+      }
+
+      textarea.form-control:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+      }
+
+      .modal-content {
+        border-radius: 1rem;
+      }
+
+      .input-group {
+        max-width: 250px;  
+      }
+
+      .input-group input {
+        font-size: 14px;  
+      }
+
+      .navbar .d-flex {
+        align-items: center;
+      }
+
+  body(class="bg-light")
+    nav.navbar.navbar-light.bg-white.shadow-sm.mb-4
+      .container.d-flex.justify-content-between.align-items-center
+        a.navbar-brand(href="/")
+          span.d-flex.align-items-center
+            img(src="/images/img.png", alt="Logo", style="height: 32px; margin-right: 8px;")
+            | MiniBlog
+        .d-flex.align-items-center
+          form(action="/todo", method="get", class="d-flex me-3")
+            .input-group
+              input.form-control(
+                type="text", 
+                name="search", 
+                placeholder="Search posts...",
+                value=search || '',
+                class="me-2"
+              )
+              button.btn.btn-outline-secondary(type="submit")
+                i.fas.fa-search
+          if user
+            span.text-muted.me-3 Logged in as #{user}
+            form(action="/todo/logout", method="post", style="display:inline")
+              button.btn.btn-outline-danger.btn-sm(type="submit") Logout
+          else
+            a.btn.btn-outline-primary.btn-sm(href="/login") Login
+
+    .container
+      if info
+        .alert.alert-info.mt-2= info
+
+      if user
+        form(action="/todo/upload", method="post", enctype="multipart/form-data", class="mb-5")
+          .card.p-4.shadow-sm
+            h4.mb-3 Add a new post
+            .mb-3
+              textarea.form-control(name="task", rows="4", placeholder="What's on your mind?", required)
+            .mb-3
+              label.form-label Upload image (optional)
+              input.form-control(type="file", name="file")
+            .d-flex.justify-content-end
+              button.btn.btn-success(type="submit") Publish
+
+      each row in rows
+        .blog-post
+          if row.url
+            img.blog-img(src=row.url, alt="Post image")
+          else
+            img.blog-img(src="/images/default.png", alt="No image")
+          .blog-content
+            .d-flex.justify-content-between.align-items-center
+              h5.mb-1.mb-0= row.user
+              small.text-muted   #{row.date_modified}
+            p.mt-2(style="white-space: pre-line")= row.task
+            if user && row.user == user
+              .d-flex.justify-content-end.mt-2
+                button.btn.btn-sm.btn-outline-info.me-2.edit(
+                  type="button",
+                  data-bs-toggle="modal",
+                  data-bs-target="#EditModal",
+                  data-id=row.id,
+                  data-task=row.task,
+                  data-url=row.url
+                )
+                  i.fas.fa-edit   
+                button.btn.btn-sm.btn-outline-danger.delete(
+                  type="button",
+                  data-bs-toggle="modal",
+                  data-bs-target="#DeleteModal",
+                  data-id=row.id
+                )
+                  i.fas.fa-trash-alt    
+
+    // MODAL: DELETE
+    form#delete-form(action="/todo/delete", method="post")
+      .modal.fade#DeleteModal(tabindex="-1", aria-labelledby="modalLabel", aria-hidden="true")
+        .modal-dialog
+          .modal-content
+            .modal-header
+              h5.modal-title#modalLabel Confirm Delete
+              button.btn-close(type="button", data-bs-dismiss="modal")
+            .modal-body
+              p.text-danger Are you sure you want to delete this post?
+            .modal-footer
+              input(type="hidden", name="id", class="id")
+              button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancel
+              button.btn.btn-danger(type="submit") Delete
+
+    // MODAL: EDIT
+    form#edit-form(action="/todo/update", method="post" enctype="multipart/form-data")
+      .modal.fade#EditModal(tabindex="-1", aria-labelledby="modalLabelEdit", aria-hidden="true")
+        .modal-dialog
+          .modal-content
+            .modal-header
+              h5.modal-title#modalLabelEdit Edit Post
+              button.btn-close(type="button", data-bs-dismiss="modal")
+            .modal-body
+              .mb-3
+                label.form-label Edit text
+                textarea.form-control.task(name="task", rows="4", required)
+              .mb-3
+                label.form-label Replace image (optional)
+                input.form-control(type="file", name="file")
+              input.form-control.url(type="hidden", name="url")
+            .modal-footer
+              input(type="hidden", name="id", class="id")
+              button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancel
+              button.btn.btn-info(type="submit") Update
+
+    script(src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js")
+    script.
+      $(document).ready(function(){
+        $('.delete').on('click', function(){
+          $('.id').val($(this).data('id'));
+        });
+        $('.edit').on('click', function(){
+          $('.id').val($(this).data('id'));
+          $('.task').val($(this).data('task'));
+          $('.url').val($(this).data('url'));
+        });
+      });
